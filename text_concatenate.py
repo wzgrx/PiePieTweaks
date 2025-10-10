@@ -55,11 +55,9 @@ class PiePieTextConcatenate:
             # Join all the texts together
             result = delim.join(texts)
         
-        # Return with UI update
         return {"ui": {"string": [result]}, "result": (result,)}
 
 
-# Registration
 NODE_CLASS_MAPPINGS = {
     "PiePieTextConcatenate": PiePieTextConcatenate
 }

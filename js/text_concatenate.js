@@ -11,7 +11,6 @@ app.registerExtension({
             nodeType.prototype.onNodeCreated = function() {
                 onNodeCreated?.apply(this, arguments);
                 
-                // Rename widget labels for better display
                 const delimiterWidget = this.widgets?.find(w => w.name === "delimiter");
                 if (delimiterWidget) {
                     delimiterWidget.label = "Delimiter";
