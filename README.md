@@ -27,6 +27,59 @@ Two modes to choose from:
    - Bad generations? Just re-generate
    - Good generation? Click save and it goes to your output folder with the same prefix you would have had with the Save Image node
 
+---
+
+### PiePie - Resolution Picker
+
+Quick way to pick optimal resolutions for different model types.
+
+**The Problem It Solves:**
+- No more guessing which resolution works best for your model
+- No more manually typing in width/height values
+- Extensable with the js/resolutions.js file
+
+**How It Works:**
+
+1. Choose your model type (Flux, SDXL, SD1.5, Pony, etc.)
+2. Choose orientation (Portrait, Landscape, Square)
+3. Pick from the filtered list of optimal resolutions
+4. Or select CUSTOM and enter whatever dimensions you want
+
+The dropdown dynamically updates based on your selections, showing only relevant resolutions.
+
+---
+
+### PiePie - Resolution from Megapixels
+
+Find the closest suggested resolution to your target megapixel count.
+
+**The Problem It Solves:**
+- You know you want "around 1.5 megapixels" but don't want to calculate dimensions
+- Key use case: you're iterating fast and want consistent megapixel counts without manually picking resolutions
+- Optional use case: you want to stay under a certain megapixel limit for VRAM reasons
+
+**How It Works:**
+
+1. Set your target megapixels (e.g., 1.5)
+2. Choose model type and orientation filters (or leave as ALL)
+3. Toggle "do not exceed" if you want to enforce a hard limit
+4. Node outputs the closest matching width, height, and actual megapixels
+
+---
+
+### PiePie - Text Concatenate
+
+Simple text concatenation with a separator.
+
+**The Problem It Solves:**
+- Joining multiple text inputs without messy workarounds
+- Key use case: combining prompts, filenames, or tags from different sources
+
+**How It Works:**
+
+Takes multiple text inputs and joins them with your chosen separator (space, comma, newline, etc.).
+Allows for manual entry or inputs.
+
 
 ## Installation
 
