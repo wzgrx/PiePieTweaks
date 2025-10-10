@@ -1,0 +1,24 @@
+from .preview_image import NODE_CLASS_MAPPINGS as PreviewImageMappings
+from .preview_image import NODE_DISPLAY_NAME_MAPPINGS as PreviewImageDisplayMappings
+from .preview_image import WEB_DIRECTORY
+from .text_concatenate import NODE_CLASS_MAPPINGS as TextConcatenateMappings
+from .text_concatenate import NODE_DISPLAY_NAME_MAPPINGS as TextConcatenateDisplayMappings
+from .resolution_picker import NODE_CLASS_MAPPINGS as ResolutionPickerMappings
+from .resolution_picker import NODE_DISPLAY_NAME_MAPPINGS as ResolutionPickerDisplayMappings
+
+from . import api
+
+
+NODE_CLASS_MAPPINGS = {
+    **PreviewImageMappings,
+    **TextConcatenateMappings,
+    **ResolutionPickerMappings,
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    **PreviewImageDisplayMappings,
+    **TextConcatenateDisplayMappings,
+    **ResolutionPickerDisplayMappings,
+}
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
