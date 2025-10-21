@@ -7,6 +7,8 @@ from .resolution_picker import NODE_CLASS_MAPPINGS as ResolutionPickerMappings
 from .resolution_picker import NODE_DISPLAY_NAME_MAPPINGS as ResolutionPickerDisplayMappings
 from .resolution_from_megapixels import NODE_CLASS_MAPPINGS as ResolutionFromMPMappings
 from .resolution_from_megapixels import NODE_DISPLAY_NAME_MAPPINGS as ResolutionFromMPDisplayMappings
+from .lucidflux import NODE_CLASS_MAPPINGS as LucidfluxMappings
+from .lucidflux import NODE_DISPLAY_NAME_MAPPINGS as LucidfluxDisplayMappings
 
 from . import api
 
@@ -16,6 +18,7 @@ NODE_CLASS_MAPPINGS = {
     **TextConcatenateMappings,
     **ResolutionPickerMappings,
     **ResolutionFromMPMappings,
+    **LucidfluxMappings,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -23,6 +26,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **TextConcatenateDisplayMappings,
     **ResolutionPickerDisplayMappings,
     **ResolutionFromMPDisplayMappings,
+    **LucidfluxDisplayMappings,
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
