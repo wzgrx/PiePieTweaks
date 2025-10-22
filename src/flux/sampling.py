@@ -139,12 +139,14 @@ def denoise_lucidflux(
     guidance: float = 4.0,
     condition_cond_lq=None,
     condition_cond_ldr=None,
+    progress_callback=None,
 ):
     # this is ignored for schnell
     guidance_vec = torch.full((img.shape[0],), guidance, device=img.device, dtype=img.dtype)
-    timestep_pairs = zip(timesteps[:-1], timesteps[1:])
-    timestep_pairs = tqdm(timestep_pairs, total=len(timesteps)-1, desc="Denoising")
-    for t_curr, t_prev in timestep_pairs:
+    timestep_pairs = list(zip(timesteps[:-1], timesteps[1:]))
+    total_steps = len(timestep_pairs)
+
+    for step_idx, (t_curr, t_prev) in enumerate(timestep_pairs):
         t_vec = torch.full((img.shape[0],), t_curr, dtype=img.dtype, device=img.device)
         # align dtypes to model/controlnet precision (e.g., bf16)
         dtype = img.dtype
@@ -180,6 +182,10 @@ def denoise_lucidflux(
         )
 
         img = img + (t_prev - t_curr) * pred
+
+        # Call progress callback if provided
+        if progress_callback is not None:
+            progress_callback(step_idx + 1, total_steps, img)
 
     return img
     

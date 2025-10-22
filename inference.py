@@ -739,7 +739,7 @@ def _get_original_key(lora_key):
     return original_key
 
 
-def lucidflux_inference(model,dual_condition_branch,input_data,guidance,num_steps,seed,torch_device,is_schnell=False,offload=False):
+def lucidflux_inference(model,dual_condition_branch,input_data,guidance,num_steps,seed,torch_device,is_schnell=False,offload=False,progress_callback=None):
     print_memory_status("🎨 [Denoise Start] ")
     lat_list = []
 
@@ -788,6 +788,7 @@ def lucidflux_inference(model,dual_condition_branch,input_data,guidance,num_step
                 guidance=guidance,
                 condition_cond_lq=data.get("condition_cond"),
                 condition_cond_ldr=data.get("condition_cond_ldr"),
+                progress_callback=progress_callback,
             )
 
             # Offload models back to CPU

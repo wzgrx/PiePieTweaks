@@ -80,6 +80,33 @@ Simple text concatenation with a separator.
 Takes multiple text inputs and joins them with your chosen separator (space, comma, newline, etc.).
 Allows for manual entry or inputs.
 
+---
+
+### PiePie - Lucidflux
+
+Image restoration and enhancement using the LucidFlux model with Flux diffusion.
+
+
+**Notes:**
+
+1. **Dimension workaround** - dimensions are automatically adjusted to SwinIR requirements. There might be a better way of handling that but this avoids a lot of issues.
+2. **Use embeddings or conditioning** - precomputed prompt embeddings or live CLIP conditioning. I suggest using the embeddings and ensure "use_embeddings" is TRUE. IF using CLIP then set that to false.
+3. **Accelerator** - FLUX Turbo is in example workflow, optional. Use 4-8 steps instead if using.
+4. **Prepreocess** - OPTIONAL - Suggest using HYPIR (see workflow example with preprocessing) as preprocessor for most general use cases. This requires ComfyUI-HYPIR custom node download.
+
+The node handles model caching, memory management, and optional model offloading for VRAM efficiency.
+
+**Required Models and Download Links:**
+
+| Model | Location | Download Link | Notes |
+|-------|----------|---------------|-------|
+| **LucidFlux Checkpoint** | `ComfyUI/models/LucidFlux/` | [lucidflux.pth (3.39 GB)](https://huggingface.co/W2GenAI/LucidFlux/blob/main/lucidflux.pth) | Main restoration model |
+| **SwinIR Prior** | `ComfyUI/models/LucidFlux/` | [Download from LucidFlux repo](https://github.com/W2GenAI-Lab/LucidFlux) | Use `tools.download_weights` script |
+| **Prompt Embeddings** (Optional) | `ComfyUI/models/LucidFlux/` | [prompt_embeddings.pt (8.39 MB)](https://huggingface.co/W2GenAI/LucidFlux/blob/main/prompt_embeddings.pt) | Pre-computed embeddings |
+| **Flux Model** (Recommended) | `ComfyUI/models/unet/` | [flux1-dev-fp8.safetensors (17.2 GB)](https://huggingface.co/Comfy-Org/flux1-dev/blob/main/flux1-dev-fp8.safetensors) | FP8 quantized for lower VRAM usage. Alternative: [Kijai/flux-fp8](https://huggingface.co/Kijai/flux-fp8) |
+| **VAE** | `ComfyUI/models/vae/` | [ae.safetensors](https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/ae.safetensors) | Flux VAE |
+| **CLIP Vision** (Recommended) | `ComfyUI/models/clip_vision/` | [siglip2-so400m-patch16-512](https://huggingface.co/google/siglip2-so400m-patch16-512) | Google SigLIP 2 model (4.55 GB) |
+
 
 ## Installation
 

@@ -5,6 +5,7 @@ from omegaconf import OmegaConf
 import folder_paths
 import gc
 import nodes
+import comfy.utils
 
 from . import model_loader_utils
 from . import inference
@@ -211,8 +212,15 @@ class PiePie_Lucidflux:
         aggressive_cleanup()
         print_memory_status("  After cleanup: ")
 
+        # Create progress bar callback
+        pbar = comfy.utils.ProgressBar(steps)
+
+        def progress_callback(step, total_steps, img_latent):
+            # Update progress bar
+            pbar.update(1)
+
         x = lucidflux_inference(pipe, dual_condition_branch, condition, cfg, steps, seed, device,
-                               model.get("is_schnell", False), offload)
+                               model.get("is_schnell", False), offload, progress_callback=progress_callback)
 
         # Decoding
         print("\n  [Decode Start] Decoding latents...")
