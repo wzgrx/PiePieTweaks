@@ -141,15 +141,10 @@ class PiePie_Lucidflux:
         if use_embeddings and prompt_embeddings != "none":
             prompt_emb_path = folder_paths.get_full_path("LucidFlux", prompt_embeddings)
             if prompt_emb_path is not None:
-                print(f"✓ Loading prompt embeddings from {prompt_emb_path}")
+                print(f"Loading prompt embeddings from {prompt_emb_path}")
                 prompt_emb_data = torch.load(prompt_emb_path, map_location='cpu', weights_only=False)
 
-        print("\n" + "="*60)
-        print("🚀 Starting LucidFlux Processing Pipeline")
-        print("="*60)
-        print_memory_status("📍 [Initial] ")
-
-        print("\n📦 [Encode Start] Preprocessing image...")
+        print("Starting LucidFlux processing...")
 
         swinir_path = folder_paths.get_full_path("LucidFlux", swinir) if swinir != "none" else None
 
@@ -166,21 +161,20 @@ class PiePie_Lucidflux:
             adjusted_height = SWINIR_MULTIPLE
 
         if adjusted_width != width or adjusted_height != height:
-            print(f"⚠️ SwinIR dimension adjustment: {width}x{height} → {adjusted_width}x{adjusted_height}")
+            print(f"WARNING: SwinIR dimension adjustment: {width}x{height} → {adjusted_width}x{adjusted_height}")
             print(f"   (Dimensions must be divisible by {SWINIR_MULTIPLE})")
 
         input_pli_list = tensor2pillist_upscale(image, adjusted_width, adjusted_height)
 
         # Use embeddings or positive conditioning
         if use_embeddings and prompt_emb_data is not None:
-            print("Using precomputed prompt embeddings")
             inp_cond = get_cond_from_embeddings(prompt_emb_data, adjusted_height, adjusted_width, device)
         else:
-            print("Using positive conditioning from CLIP")
             if positive is None:
                 raise ValueError("Either prompt_embeddings (with use_embeddings=True) or positive conditioning is required")
             inp_cond = get_cond(positive, adjusted_height, adjusted_width, device)
 
+        print("Encoding image...")
         condition = preprocess_data_cached(
             self._swinir_cache,
             self._redux_cache,
@@ -193,24 +187,12 @@ class PiePie_Lucidflux:
             enable_offload
         )
 
-        print("Encoding complete")
-        print_memory_status("  After encoding: ")
-
         # Sampling
-        print("\n[Sample Start] Generating restoration...")
+        print("Generating restoration...")
 
         pipe = model.get("model")
         dual_condition_branch = model.get("dual_condition_branch")
         offload = model.get("offload", False)
-
-        print("Pre-denoising cleanup...")
-        try:
-            import comfy.model_management as mm
-            mm.soft_empty_cache()
-        except:
-            pass
-        aggressive_cleanup()
-        print_memory_status("  After cleanup: ")
 
         # Create progress bar callback
         pbar = comfy.utils.ProgressBar(steps)
@@ -223,12 +205,10 @@ class PiePie_Lucidflux:
                                model.get("is_schnell", False), offload, progress_callback=progress_callback)
 
         # Decoding
-        print("\n  [Decode Start] Decoding latents...")
-        print_memory_status("  ")
+        print("Decoding latents...")
 
         images = []
         for idx, (i, j) in enumerate(zip(x, condition)):
-            print(f"  Decoding image {idx+1}/{len(x)}")
 
             decoded_image = vae.decode(i).squeeze(0)
 
@@ -247,8 +227,7 @@ class PiePie_Lucidflux:
         del x, images, condition
         aggressive_cleanup()
 
-        print_memory_status("✅ [Complete] ")
-        print("="*60 + "\n")
+        print("LucidFlux processing complete")
 
         return (img,)
 

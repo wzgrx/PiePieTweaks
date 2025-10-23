@@ -333,13 +333,10 @@ def load_lucidflux_model(args,ckpt_path,cf_model,torch_device,offload=False):
     model = load_flow_model(name, ckpt_path, cf_model)
 
     if type(model).__module__.startswith('comfy.'):
-        print(f"Wrapping ComfyUI model for compatibility: {type(model).__name__}")
         model = ComfyUIFluxWrapper(model)
 
     if not offload:
-        print(f"Loading Flux model to {torch_device}...")
         model = model.to(torch_device)
-        print_memory_status("  ")
 
     device_for_loading = 'cpu' if offload else torch_device
 
@@ -517,13 +514,9 @@ def get_cond_from_embeddings(prompt_embeddings, height, width, device, bs=1):
 
 
 def preprocess_data_cached(swinir_cache, redux_cache, state_dict, swinir_path, siglip_model, input_pli_list, inp_cond, torch_device, offload=False):
-    print_memory_status("[Encode Start] ")
     dtype = torch.bfloat16 if torch_device.type == 'cuda' else torch.float32
 
-    print("Stage 1/3: SwinIR Processing")
-
     if swinir_path not in swinir_cache:
-        print(f"  Loading SwinIR from {swinir_path}")
         swinir = SwinIR(
             img_size=64,
             patch_size=1,
@@ -552,14 +545,10 @@ def preprocess_data_cached(swinir_cache, redux_cache, state_dict, swinir_path, s
 
         swinir_cache[swinir_path] = swinir
     else:
-        print(f"  Using cached SwinIR")
         swinir = swinir_cache[swinir_path]
 
-    print(f"  Moving SwinIR to {torch_device if not offload else 'CPU'}")
     swinir = swinir.to('cpu' if offload else torch_device)
-    print_memory_status("  ")
 
-    print("  Processing images with SwinIR...")
     swinir_results = []
     for idx, lq_processed in enumerate(input_pli_list):
         condition_cond = torch.from_numpy((np.array(lq_processed) / 127.5) - 1)
@@ -588,16 +577,12 @@ def preprocess_data_cached(swinir_cache, redux_cache, state_dict, swinir_path, s
             "condition_cond_ldr": condition_cond_ldr
         })
 
-        if idx % 1 == 0: 
+        if idx % 1 == 0:
             aggressive_cleanup()
 
-    print("  SwinIR processing complete, offloading to CPU")
     swinir_cache[swinir_path] = swinir.cpu()
     del swinir
     aggressive_cleanup()
-    print_memory_status("  ")
-
-    print("Stage 2/3: SIGLIP Encoding")
 
     siglip_results = []
     for idx, result in enumerate(swinir_results):
@@ -622,22 +607,14 @@ def preprocess_data_cached(swinir_cache, redux_cache, state_dict, swinir_path, s
         if idx % 1 == 0:
             aggressive_cleanup()
 
-    print_memory_status("  ")
-
-    print("Stage 3/3: Redux Encoding")
-
     redux_key = str(id(state_dict))
     if redux_key not in redux_cache:
-        print("  Loading Redux Image Encoder")
         redux_image_encoder = load_redux_image_encoder(torch_device, dtype, state_dict)
         redux_cache[redux_key] = redux_image_encoder.cpu()
     else:
-        print(f"  Using cached Redux Image Encoder")
         redux_image_encoder = redux_cache[redux_key]
 
-    print(f"  Moving Redux to {torch_device}")
     redux_image_encoder = redux_image_encoder.to(torch_device).to(dtype)
-    print_memory_status("  ")
 
     data_list = []
     for idx, (swinir_res, siglip_res) in enumerate(zip(swinir_results, siglip_results)):
@@ -677,74 +654,17 @@ def preprocess_data_cached(swinir_cache, redux_cache, state_dict, swinir_path, s
 
     del swinir_results, siglip_results
 
-    print("  Redux processing complete, offloading to CPU")
     redux_cache[redux_key] = redux_image_encoder.cpu()
     del redux_image_encoder
     aggressive_cleanup()
 
-    print_memory_status("[Encode Complete] ")
     return data_list
 
 
-def load_condition_model(model, lora_path, lora_scale):
-    if lora_path is None:
-        return model
-
-    try:
-        model_int = model.get("model")
-        _apply_lora_weights(model_int, lora_path, lora_scale)
-        model["model"] = model_int
-        print(f"Applied LoRA: {lora_path} (scale: {lora_scale})")
-        return model
-
-    except Exception as e:
-        print(f"LoRA application failed: {str(e)}")
-        return model
-
-def _apply_lora_weights( model, lora_path, scale):
-
-    from safetensors.torch import load_file as load_sft
-    
-    lora_sd = load_sft(lora_path, device="cpu")
-    
-    # 获取模型状态字典
-    model_sd = model.state_dict()
-    
-    # 应用LoRA权重
-    for key in lora_sd:
-        if "lora_up" in key:
-            # 找到对应的down权重和原始权重
-            down_key = key.replace("lora_up", "lora_down")
-            original_key = _get_original_key(key)
-            
-            if down_key in lora_sd and original_key in model_sd:
-                up_weight = lora_sd[key]
-                down_weight = lora_sd[down_key]
-                original_weight = model_sd[original_key]
-                
-                # 计算LoRA增量并应用
-                with torch.no_grad():
-                    lora_delta = (down_weight @ up_weight) * scale
-                    model_sd[original_key].copy_(original_weight + lora_delta)
-    
-    # 更新模型权重
-    model.load_state_dict(model_sd)
-    del lora_sd
-
-def _get_original_key(lora_key):
-    """从LoRA键名获取原始模型键名"""
-    # 移除LoRA特定的后缀
-    original_key = lora_key.replace(".lora_up.weight", ".weight")
-    original_key = original_key.replace(".lora_down.weight", ".weight")
-    return original_key
-
-
 def lucidflux_inference(model,dual_condition_branch,input_data,guidance,num_steps,seed,torch_device,is_schnell=False,offload=False,progress_callback=None):
-    print_memory_status("🎨 [Denoise Start] ")
     lat_list = []
 
     for idx, data in enumerate(input_data):
-        print(f"Processing image {idx+1}/{len(input_data)}")
 
         with torch.no_grad():
             height, width=data.get("size")
@@ -767,13 +687,9 @@ def lucidflux_inference(model,dual_condition_branch,input_data,guidance,num_step
 
             # Move models to device if offloading
             if offload:
-                print("  Moving Flux model to GPU...")
                 model = model.to(torch_device)
-                print("  Moving dual_condition_branch to GPU...")
                 dual_condition_branch.to(torch_device)
-                print_memory_status("  ")
 
-            print("  Starting denoising...")
             x = denoise_lucidflux(
                 model,
                 dual_condition_model=dual_condition_branch,
@@ -793,12 +709,9 @@ def lucidflux_inference(model,dual_condition_branch,input_data,guidance,num_step
 
             # Offload models back to CPU
             if offload:
-                print("  Moving Flux model to CPU...")
                 model = model.cpu()
-                print("  Moving dual_condition_branch to CPU...")
                 dual_condition_branch.cpu()
                 aggressive_cleanup()
-                print_memory_status("  ")
 
             x = unpack(x.float(), height, width)
             x=(x/0.3611)+0.1159 #mean
@@ -808,7 +721,6 @@ def lucidflux_inference(model,dual_condition_branch,input_data,guidance,num_step
         del img, timesteps
         aggressive_cleanup()
 
-    print_memory_status("[Denoise Complete] ")
     return lat_list
 
 
